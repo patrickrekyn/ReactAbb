@@ -1,12 +1,37 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Typography, Button, TextField, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
-
+import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
 function Utilisateur() {
     const [utilisateurs, setUtilisateurs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [currentUser, setCurrentUser] = useState({ id: '', email: '' });
+    // Ajouter un état pour le terme de recherche
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // Filtrer les utilisateurs selon le terme de recherche
+    const filteredUsers = utilisateurs.filter(utilisateur =>
+        utilisateur.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    // Ajouter cette fonction dans le composant Utilisateur
+    const handleExportCSV = () => {
+        const csvContent = [
+            ['ID', 'Email'], // En-têtes
+            ...filteredUsers.map(user => [user.id, user.email])
+                .map(row => row.join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        saveAs(blob, 'utilisateurs.csv');
+    };
+    const handleExportExcel = () => {
+        const ws = XLSX.utils.json_to_sheet(filteredUsers);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Utilisateurs");
+        XLSX.writeFile(wb, "utilisateurs.xlsx");
+    };
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -74,6 +99,33 @@ function Utilisateur() {
             <Typography variant="h4" gutterBottom>
                 Liste des Utilisateurs
             </Typography>
+            <div>
+                <TextField
+                label="Rechercher par email"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                sx={{ mb: 3 }}
+                />
+                <Button
+                    variant="contained"
+                    color="success"
+                    onClick={handleExportCSV}
+                    sx={{ mb: 3, ml: 2 }}
+                >
+                    Exporter en CSV
+                </Button>
+                <Button
+                    variant="contained"
+                    color="success"
+                    onClick={handleExportExcel}
+                    sx={{ mb: 3, ml: 2 }}
+                >
+                    Exporter en Excel
+                </Button>
+            </div>
             {loading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
                     <CircularProgress />
@@ -88,8 +140,8 @@ function Utilisateur() {
                                 <TableCell>Actions</TableCell>
                             </TableRow>
                         </TableHead>
-                        <TableBody>
-                            {utilisateurs.map(utilisateur => (
+                            <TableBody>
+                                {filteredUsers.map(utilisateur => (
                                 <TableRow key={utilisateur.id}>
                                     <TableCell>{utilisateur.id}</TableCell>
                                     <TableCell>{utilisateur.email}</TableCell>

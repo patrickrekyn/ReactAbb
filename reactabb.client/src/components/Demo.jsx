@@ -22,6 +22,9 @@ import { ThemeSwitcher } from '@toolpad/core/DashboardLayout';
 import { useDemoRouter } from '@toolpad/core/internal';
 import AddLocationAltTwoToneIcon from '@mui/icons-material/AddLocationAltTwoTone';
 import AgenceMap from './AgenceMap';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const NAVIGATION = [
     {
@@ -135,6 +138,24 @@ export default function DashboardLayoutBasic(props) {
 
     // Remove this const when copying and pasting into your project.
     const demoWindow = window ? window() : undefined;
+    // eslint-disable-next-line no-unused-vars
+    const [user, setUser] = useState(null);
+    const navigate = useNavigate();
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        axios.get('https://localhost:7265/api/OracleData/utilisateurs', {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+            
+            .catch(error => {
+                console.error('Erreur lors de la récupération des utilisateurs:', error);
+                
+            });
+        
+ 
+    }, [navigate]);
 
     return (
         <AppProvider
