@@ -118,66 +118,134 @@ namespace ReactAbb.Server.Controllers
         [HttpPost("verify-otp")]
         public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequest verifyOtpRequest)
         {
-            if (!_otpStore.TryGetValue(verifyOtpRequest.Email, out var storedOtp))
+            try
             {
-                return BadRequest("Aucun code OTP trouvé pour cet e-mail.");
-            }
+                if (!_otpStore.TryGetValue(verifyOtpRequest.Email, out var storedOtp))
+                {
+                    return BadRequest("Aucun code OTP trouvé pour cet e-mail.");
+                }
 
-            if (storedOtp != verifyOtpRequest.Otp)
-            {
-                return Unauthorized("Code OTP incorrect.");
-            }
+                if (storedOtp != verifyOtpRequest.Otp)
+                {
+                    return Unauthorized("Code OTP incorrect.");
+                }
 
-            // Supprimer le code OTP après validation
-            _otpStore.Remove(verifyOtpRequest.Email);
+                using IDbConnection connection = new OracleConnection(
+                    _config.GetConnectionString("OracleConnection"));
 
-            using (IDbConnection connection = new OracleConnection(
-                _config.GetConnectionString("OracleConnection")))
-            {
+                // Récupérer l'utilisateur
                 var utilisateur = await connection.QueryFirstOrDefaultAsync<Utilisateurs>(
                     "SELECT * FROM UTILISATEURS WHERE EMAIL = :Email",
                     new { Email = verifyOtpRequest.Email });
 
-                // Générer un token JWT
+                // Générer le token JWT
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
                     Subject = new ClaimsIdentity(new Claim[]
                     {
-                        new Claim(ClaimTypes.Name, verifyOtpRequest.Email),
-                        new Claim(ClaimTypes.NameIdentifier, utilisateur.ID.ToString())
+                new Claim(ClaimTypes.Name, verifyOtpRequest.Email),
+                new Claim(ClaimTypes.NameIdentifier, utilisateur.ID.ToString())
                     }),
                     Expires = DateTime.UtcNow.AddHours(1),
                     Issuer = _config["Jwt:Issuer"],
                     Audience = _config["Jwt:Audience"],
-                    SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                    SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key),
+                        SecurityAlgorithms.HmacSha256Signature)
                 };
                 var token = tokenHandler.CreateToken(tokenDescriptor);
                 var tokenString = tokenHandler.WriteToken(token);
 
                 // Enregistrer la session
-                if (utilisateur == null || utilisateur.ID == null)
+                var sql = @"
+            INSERT INTO SESSIONS (ID, USER_ID, TOKEN,CREATED_AT, EXPIRED_AT) 
+            VALUES (SESSIONS_SEQ.NEXTVAL, :UserId, :Token,:CreatedAt, :ExpiredAt)";
+
+                await connection.ExecuteAsync(sql, new
                 {
-                    return BadRequest("Utilisateur non trouvé ou ID manquant.");
-                }
+                    UserId = utilisateur.ID,
+                    Token = tokenString,
+                    CreatedAt =DateTime.UtcNow,
+                    ExpiredAt = DateTime.UtcNow.AddHours(4)
+                });
 
-               
+                _otpStore.Remove(verifyOtpRequest.Email);
 
-                // Enregistrer la session avec l'ID généré
-                await connection.ExecuteAsync(
-                    @"INSERT INTO SESSIONS ( USER_ID, TOKEN, LOGIN_TIME, IS_ACTIVE) 
-                    VALUES ( :UserId, :Token, :LoginTime, 1)",
-                    new
+                return Ok(new
+                {
+                    Token = tokenString,
+                    User = new
                     {
-                        UserId = utilisateur.ID,
-                        Token = tokenString,
-                        LoginTime = DateTime.UtcNow
-                    });
-
-                return Ok(new { Token = tokenString, Message = "Connexion réussie." });
+                        Id = utilisateur.ID,
+                        Email = utilisateur.EMAIL
+                    },
+                    Message = "Connexion réussie."
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
             }
         }
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            try
+            {
+                var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+                using IDbConnection connection = new OracleConnection(
+                    _config.GetConnectionString("OracleConnection"));
+
+                // Marquer la session comme expirée
+                await connection.ExecuteAsync(
+                    "UPDATE SESSIONS SET EXPIRED_AT = CURRENT_TIMESTAMP WHERE TOKEN = :Token",
+                    new { Token = token });
+
+                return Ok(new { Message = "Déconnexion réussie." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+        //public IActionResult VerifyOtp([FromBody] VerifyOtpRequest verifyOtpRequest)
+        //{
+        //    if (!_otpStore.TryGetValue(verifyOtpRequest.Email, out var storedOtp))
+        //    {
+        //        return BadRequest("Aucun code OTP trouvé pour cet e-mail.");
+        //    }
+
+        //    if (storedOtp != verifyOtpRequest.Otp)
+        //    {
+        //        return Unauthorized("Code OTP incorrect.");
+        //    }
+
+        //    // Supprimer le code OTP après validation
+        //    _otpStore.Remove(verifyOtpRequest.Email);
+
+        //    // Générer un token JWT
+        //    var tokenHandler = new JwtSecurityTokenHandler();
+        //    var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
+        //    var tokenDescriptor = new SecurityTokenDescriptor
+        //    {
+        //        Subject = new ClaimsIdentity(new Claim[]
+        //        {
+        //    new Claim(ClaimTypes.Name, verifyOtpRequest.Email),
+        //    new Claim(ClaimTypes.NameIdentifier, "ID_UTILISATEUR") // Remplacez par l'ID réel
+        //        }),
+        //        Expires = DateTime.UtcNow.AddHours(1),
+        //        Issuer = _config["Jwt:Issuer"],
+        //        Audience = _config["Jwt:Audience"],
+        //        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+        //    };
+        //    var token = tokenHandler.CreateToken(tokenDescriptor);
+        //    var tokenString = tokenHandler.WriteToken(token);
+
+        //    return Ok(new { Token = tokenString, Message = "Connexion réussie." });
+        //}
 
         public class VerifyOtpRequest
         {
@@ -304,50 +372,53 @@ namespace ReactAbb.Server.Controllers
             public string Email { get; set; }
         }
         [Authorize]
-        [HttpGet("current-user")]
-        public async Task<IActionResult> GetCurrentUser()
+        [HttpGet("validate-token")]
+        public async Task<IActionResult> ValidateToken()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            using (IDbConnection connection = new OracleConnection(
-                _config.GetConnectionString("OracleConnection")))
+            try
             {
-                var utilisateur = await connection.QueryFirstOrDefaultAsync<Utilisateurs>(
-                    "SELECT * FROM UTILISATEURS WHERE ID = :Id",
-                    new { Id = userId });
+                var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
 
-                if (utilisateur == null)
+                using IDbConnection connection = new OracleConnection(
+                    _config.GetConnectionString("OracleConnection"));
+
+                var session = await connection.QueryFirstOrDefaultAsync(
+                    "SELECT * FROM SESSIONS WHERE TOKEN = :Token AND EXPIRED_AT > CURRENT_TIMESTAMP",
+                    new { Token = token });
+
+                if (session == null)
                 {
-                    return NotFound("Utilisateur non trouvé.");
+                    return Unauthorized("Token invalide ou session expirée.");
                 }
 
-                return Ok(new { utilisateur.EMAIL, utilisateur.ID });
+                return Ok("Token valide.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
             }
         }
-
         [Authorize]
-        [HttpPost("logout")]
-        public async Task<IActionResult> Logout()
+        [HttpPost("send-test-email")]
+        public async Task<IActionResult> SendTestEmail()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
-
-            using (IDbConnection connection = new OracleConnection(
-                _config.GetConnectionString("OracleConnection")))
+            try
             {
-                await connection.ExecuteAsync(
-                    @"UPDATE SESSIONS 
-            SET LOGOUT_TIME = :LogoutTime, IS_ACTIVE = 0 
-            WHERE USER_ID = :UserId AND TOKEN = :Token",
-                    new
-                    {
-                        LogoutTime = DateTime.UtcNow,
-                        UserId = userId,
-                        Token = token
-                    });
-            }
+                var userEmail = User.Identity.Name; // Récupère l'email depuis le token JWT
+                var emailService = new EmailService(_config);
 
-            return Ok("Déconnexion réussie");
+                emailService.SendEmail(
+                    userEmail,
+                    "Email de test",
+                    $"Bonjour {userEmail}, ceci est un email de test !"
+                );
+
+                return Ok("Email envoyé avec succès !");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
     }
 }

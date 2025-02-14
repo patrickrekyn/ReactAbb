@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress, Typography, Button, TextField, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
+import UserProfile from './UserProfil';
 function Utilisateur() {
     const [utilisateurs, setUtilisateurs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -117,6 +118,7 @@ function Utilisateur() {
                 >
                     Exporter en CSV
                 </Button>
+                <UserProfile/>
                 <Button
                     variant="contained"
                     color="success"

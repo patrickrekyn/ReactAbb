@@ -39,6 +39,7 @@ const LoginForm = () => {
             });
             if (response.status === 200) {
                 localStorage.setItem('token', response.data.token);
+                localStorage.setItem('userInfo', JSON.stringify(response.data.user));
                 window.location.href = '/dashboardlayoutbasic';
             }
         } catch (error) {
