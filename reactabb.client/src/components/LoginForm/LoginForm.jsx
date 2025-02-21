@@ -1,13 +1,17 @@
-﻿
-import { useState } from 'react';
-import './LoginForm.css';
+﻿import { useState } from 'react';
 import sombiniainaImage from './sombiniaina.jpg';
+import logoCem from './Logo.png';
+import Container from 'react-bootstrap/Container';
+import Form from 'react-bootstrap/Form';
+import Button from 'react-bootstrap/Button';
 import axios from 'axios';
+
 const LoginForm = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [otp, setOtp] = useState('');
     const [showOtpField, setShowOtpField] = useState(false);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -48,84 +52,84 @@ const LoginForm = () => {
             }
         }
     };
-  
+
     return (
-        
-        <div className="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
+        <Container className="min-vh-100 d-flex align-items-center justify-content-center"  >
             <div className="login-container row shadow-lg rounded-4 overflow-hidden">
-                <div className="col-lg-4 p-5 form-section">
-                    <h2 className="mb-4 fw-bold">Welcome Back</h2>
-                    <form onSubmit={handleSubmit}>
-                        <div className="mb-4">
-                            <label htmlFor="email" className="form-label">Email address</label>
-                            <input
-                                type='text'
-                            placeholder='Email'
-                            required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            />
-                        </div>
-                        <div className="mb-4">
-                            <label htmlFor="password" className="form-label">Password</label>
-                            <input
-                                type='password'
-                                placeholder='Mot de passe'
+                <div className="col-lg-4 p-5 form-section" style={{ backgroundColor: 'white'}}>
+                    <div className="text-center mb-4">
+                        <img src={logoCem} alt="Logo" className="w-50" />
+                    </div>
+                    <Form onSubmit={handleSubmit}>
+                        <Form.Group className="mb-4" controlId="formEmail">
+                            <Form.Label>Email address</Form.Label>
+                            <Form.Control
+                                type="email"
+                                placeholder="Enter email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 required
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-4" controlId="formPassword">
+                            <Form.Label>Password</Form.Label>
+                            <Form.Control
+                                type="password"
+                                placeholder="Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
+                                required
                             />
-                        </div>
-                        {/*<div className="mb-4 form-check">*/}
-                        {/*    <input*/}
-                        {/*        type="checkbox"*/}
-                        {/*        className="form-check-input"*/}
-                        {/*        id="remember"*/}
-                        {/*        checked={rememberMe}*/}
-                        {/*        onChange={(e) => setRememberMe(e.target.checked)}*/}
-                        {/*    />*/}
-                        {/*    <label className="form-check-label" htmlFor="remember">Remember me</label>*/}
-                        {/*</div>*/}
+                        </Form.Group>
                         {showOtpField && (
-                            <div className='mb-4'>
-                                <input
-                                    type='text'
-                                    placeholder='Code OTP'
-                                    required
+                            <Form.Group className="mb-4" controlId="formOtp">
+                                <Form.Label>Code OTP</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Enter OTP"
                                     value={otp}
                                     onChange={(e) => setOtp(e.target.value)}
+                                    required
                                 />
-                            </div>
+                            </Form.Group>
                         )}
-                        <button type="submit" className="btn btn-primary w-100 mb-3">Sign In</button>
+                        {!showOtpField && (
+                            <Button variant="primary" type="submit" className="w-100 mb-3">
+                                Sign In
+                            </Button>
+                        )}
                         {showOtpField && (
-                            <button type='button' onClick={handleVerifyOtp}>
+                            <Button variant="primary" onClick={handleVerifyOtp} className="w-100 mb-3">
                                 Valider le code OTP
-                            </button>
+                            </Button>
                         )}
-                        <div className="text-center">
-                            <a href="#" className="text-decoration-none">Forgot password?</a>
-                        </div>
-                        <div className="social-login mt-4">
-                            <p className="text-center mb-3">Or sign in with</p>
-                            <div className="d-flex justify-content-center gap-3">
-                                <button type="button" className="btn btn-outline-secondary">Google</button>
-                                <button type="button" className="btn btn-outline-secondary">Facebook</button>
+                        {!showOtpField && (
+                            <div className="text-center">
+                                <a href="#" className="text-decoration-none">Forgot password?</a>
                             </div>
-                        </div>
-                    </form>
+                        )}
+                        {!showOtpField && (
+                            <div className="social-login mt-4">
+                                <p className="text-center mb-3">Or sign in with</p>
+                                <div className="d-flex justify-content-center gap-3">
+                                    <Button variant="outline-secondary">Google</Button>
+                                    <Button variant="outline-secondary">Facebook</Button>
+                                </div>
+                            </div>
+                        )}
+                    </Form>
                 </div>
                 <div className="col-lg-8 d-none d-lg-block p-0">
                     <div className="h-100 image-container">
                         <img
                             src={sombiniainaImage}
                             alt="Login Background"
-                            className="login-image"
+                            className="login-image w-100 h-100"
                         />
                     </div>
                 </div>
             </div>
-        </div>
+        </Container>
     );
 }
 

@@ -99,7 +99,7 @@ const AgenceMap = () => {
 
     return (
         <div>
-            <h1>Agences Caisse d'Épargne de Madagascar</h1>
+            <h1>Agences Caisse d&apos;&Eacute;pargne de Madagascar</h1>
             <div id="map" style={{ height: '400px', width: '50%' }}></div>
         </div>
     );

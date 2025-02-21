@@ -9,7 +9,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import DashboardLayoutBasic from './components/Demo';
 import axios from 'axios';
 import ProtectedRoute from './components/ProtectedRoute';
- 
 axios.interceptors.response.use(
     response => response,
     error => {
@@ -25,10 +24,12 @@ axios.interceptors.response.use(
 function App() {
     return (
         <Router>
-            <div className="container mt-4">
+            <div  style={{ backgroundColor: '#fff4f4' }}>
                 <Routes>
                     <Route path='/' element={<Login />} />
                     <Route path='/login' element={<Login />} />
+                    {/*<Route path='/' element={<LoginForm/>} />*/}
+                    {/*<Route path='/loginform' element={<LoginForm />} />*/}
                     <Route path='/utilisateurtable' element={<UtilisateurTable />} />
                     <Route path='/signup' element={<Signup />} />
                     <Route

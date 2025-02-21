@@ -11,13 +11,11 @@ import Utilisateur from './Utilisateur'; // Importer le composant Orders
 import DashboardContent from './DashboardContent'; // Importer le composant DashboardContent
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
-import Chip from '@mui/material/Chip';
-import TextField from '@mui/material/TextField';
+//import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import CloudCircleIcon from '@mui/icons-material/CloudCircle';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import SearchIcon from '@mui/icons-material/Search';
+//import CloudCircleIcon from '@mui/icons-material/CloudCircle';
+//import SearchIcon from '@mui/icons-material/Search';
 import { ThemeSwitcher } from '@toolpad/core/DashboardLayout';
 import { useDemoRouter } from '@toolpad/core/internal';
 import AddLocationAltTwoToneIcon from '@mui/icons-material/AddLocationAltTwoTone';
@@ -26,7 +24,10 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
-
+import logo from './LoginForm/Logo.png';
+import Badge from '@mui/material/Badge';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import AccountCircleTwoToneIcon from '@mui/icons-material/AccountCircleTwoTone';
 const NAVIGATION = [
     {
         kind: 'header',
@@ -58,6 +59,7 @@ const NAVIGATION = [
         segment: 'integrations',
         title: 'Integrations',
         icon: <LayersIcon />,
+        sx: { display: { xs: 'none', md: 'flex' } }
     },
 ];
 
@@ -77,50 +79,74 @@ const demoTheme = extendTheme({
 
 function ToolbarActionsSearch() {
     return (
-        <Stack direction="row">
-            <Tooltip title="Search" enterDelay={1000}>
-                <div>
-                    <IconButton
-                        type="button"
-                        aria-label="search"
-                        sx={{
-                            display: { xs: 'inline', md: 'none' },
-                        }}
-                    >
-                        <SearchIcon />
-                    </IconButton>
-                </div>
+        <Stack
+            direction="row"
+            spacing={{ xs: 1, sm: 2 }}
+            sx={{
+                alignItems: 'center',
+                flexShrink: 0
+            }}
+        >
+            <Tooltip title="Notifications">
+                <IconButton sx={{ display: { xs: 'flex', sm: 'flex' } }}>
+                    <Badge badgeContent={4} color="error">
+                        <NotificationsIcon fontSize="small" />
+                    </Badge>
+                </IconButton>
             </Tooltip>
-            <TextField
-                label="Search"
-                variant="outlined"
-                size="small"
-                slotProps={{
-                    input: {
-                        endAdornment: (
-                            <IconButton type="button" aria-label="search" size="small">
-                                <SearchIcon />
-                            </IconButton>
-                        ),
-                        sx: { pr: 0.5 },
-                    },
-                }}
-                sx={{ display: { xs: 'none', md: 'inline-block' }, mr: 1 }}
-            />
-            <ThemeSwitcher />
+
+            <Tooltip title="Profil">
+                <IconButton>
+                    <AccountCircleTwoToneIcon fontSize="small" />
+                </IconButton>
+            </Tooltip>
+
+            <ThemeSwitcher sx={{
+                '& .MuiSwitch-root': {
+                    width: 36,
+                    height: 20,
+                    padding: 0
+                },
+                '& .MuiSwitch-thumb': {
+                    width: 16,
+                    height: 16,
+                }
+            }} />
         </Stack>
     );
 }
 
 function CustomAppTitle() {
     return (
-        <Stack direction="row" alignItems="center" spacing={2}>
-            <CloudCircleIcon fontSize="large" color="primary" />
-            <Typography variant="h6">Caisse d épargne Madagascar</Typography>
-            <Chip size="small" label="BETA" color="info" />
-            <Tooltip title="Connected to production">
-                <CheckCircleIcon color="success" fontSize="small" />
-            </Tooltip>
+        <Stack
+            direction="row"
+            alignItems="center"
+            spacing={{ xs: 1, sm: 2, md: 4 }}
+            sx={{
+                flexGrow: 1,
+                minWidth: 0 // Permet le truncation du texte
+            }}
+        >
+            <img
+                src={logo}
+                alt="Logo"
+                style={{
+                    width: 'clamp(60px, 8vw, 80px)',
+                    height: 'auto',
+                    objectFit: 'contain'
+                }}
+            />
+            <Typography
+                variant="h6"
+                sx={{
+                    fontSize: { xs: '0rem', sm: '1rem', md: '1.25rem' },
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                }}
+            >
+                Caisse d&apos;&eacute;pargne Madagascar
+            </Typography>
         </Stack>
     );
 }
@@ -181,11 +207,23 @@ export default function DashboardLayoutBasic(props) {
             theme={demoTheme}
             window={demoWindow}
         >
-            <DashboardLayout slots={{
-                appTitle: CustomAppTitle,
-                toolbarActions: ToolbarActionsSearch,
-            }}>
-                <Container>
+            <DashboardLayout 
+                slots={{
+                    appTitle: CustomAppTitle,
+                    toolbarActions: ToolbarActionsSearch,
+                }}
+                sx={{
+                    '& .MuiToolbar-root': {
+                        flexWrap: 'wrap',
+                        minHeight: { xs: 56, sm: 64 },
+                        padding: { xs: '8px', sm: '12px 16px' }
+                    }
+                }}
+            >
+                    <Container maxWidth="xl" sx={{
+                        py: { xs: 2, sm: 3 },
+                        px: { xs: 1, sm: 2 }
+                    }}>
                     {router.pathname === '/dashboard' ? (
                         <DashboardContent /> // Afficher le composant DashboardContent si le segment est "dashboard"
                     ) : router.pathname === '/utilisateurs' ? (
